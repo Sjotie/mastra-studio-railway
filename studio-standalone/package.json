@@ -1,0 +1,15 @@
+{
+  "name": "mastra-studio-standalone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "start": "node start.mjs"
+  },
+  "dependencies": {
+    "mastra": "^1.12.2"
+  }
+}
