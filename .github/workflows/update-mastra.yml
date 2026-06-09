@@ -1,0 +1,77 @@
+name: Update Mastra
+
+# Keeps both templates current with Mastra's releases. Bumps all dependencies
+# to the latest minor/patch (no automatic major jumps), builds and smoke-tests
+# both configurations, and only pushes to main when everything passes.
+# Railway template deploys build from main, so a green push rolls the update
+# out to new deployments automatically.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump server-with-studio dependencies
+        working-directory: server-with-studio
+        run: |
+          npx npm-check-updates -u --target minor
+          npm install
+
+      - name: Build server with Studio
+        working-directory: server-with-studio
+        run: npx mastra build --studio
+
+      - name: Smoke test server
+        working-directory: server-with-studio
+        run: |
+          MASTRA_STUDIO_PATH=.mastra/output/studio \
+          PORT=4111 \
+          STUDIO_AUTH_KEY=ci-key \
+          OPENAI_API_KEY=sk-dummy \
+          DATABASE_URL=file:./ci.db \
+          node .mastra/output/index.mjs &
+          sleep 12
+          curl -fsS http://localhost:4111/health
+          curl -fsS -o /dev/null http://localhost:4111/
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4111/api/agents)" = "401"
+          curl -fsS -H "Authorization: Bearer ci-key" http://localhost:4111/api/agents | grep -q assistant
+          kill %1
+
+      - name: Bump studio-standalone dependencies
+        working-directory: studio-standalone
+        run: |
+          npx npm-check-updates -u --target minor
+          npm install
+
+      - name: Smoke test standalone Studio
+        working-directory: studio-standalone
+        run: |
+          PORT=3000 MASTRA_SERVER_URL=https://demo.example.com npm start &
+          sleep 6
+          curl -fsS http://localhost:3000/ | grep -qi "Mastra Studio"
+          kill %1
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet; then
+            echo "Already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: bump Mastra to latest"
+          git push

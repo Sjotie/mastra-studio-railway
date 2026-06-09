@@ -58,6 +58,10 @@ npm install
 PORT=3000 MASTRA_SERVER_URL=http://localhost:4111 npm start
 ```
 
+## Staying up to date
+
+Studio ships inside the [`mastra`](https://www.npmjs.com/package/mastra) npm package — there is no separately deployable upstream repo or official Docker image. A [weekly GitHub Action](.github/workflows/update-mastra.yml) bumps all Mastra packages to the latest minor/patch release, builds both configurations, smoke-tests them (boot, healthcheck, auth), and pushes to `main` only when everything passes. Railway template deploys build from `main`, so new deployments always get the latest verified version. Major version jumps (e.g. Mastra v2) are intentionally left to a manual migration.
+
 ## License
 
 MIT
