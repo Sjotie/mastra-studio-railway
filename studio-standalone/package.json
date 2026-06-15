@@ -10,6 +10,6 @@
     "start": "node start.mjs"
   },
   "dependencies": {
-    "mastra": "^1.12.2"
+    "mastra": "^1.13.0"
   }
 }
