@@ -1,4 +1,4 @@
-FROM node:22-slim AS build
+FROM node:22.23.4-slim AS build
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY . .
 # The build also installs the output's own production dependencies.
 RUN npx mastra build --studio
 
-FROM node:22-slim
+FROM node:22.23.4-slim
 
 WORKDIR /app
 ENV NODE_ENV=production \
